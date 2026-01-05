@@ -1,0 +1,22 @@
+{
+  "name": "music-player-app",
+  "version": "1.0.0",
+  "description": "Aplikasi Music Player seperti Spotify dengan mode offline dan online",
+  "main": "app.js",
+  "scripts": {
+    "build": "tsc app.ts",
+    "watch": "tsc app.ts --watch"
+  },
+  "keywords": [
+    "music",
+    "player",
+    "spotify",
+    "offline"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
+

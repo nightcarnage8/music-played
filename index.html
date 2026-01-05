@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Player - Spotify Clone</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-content">
+            <div class="loading-animation">
+                <div class="music-note">
+                    <i class="fas fa-music"></i>
+                </div>
+                <div class="vinyl-record">
+                    <div class="record-center"></div>
+                    <div class="record-grooves"></div>
+                </div>
+            </div>
+            <div class="loading-text">
+                <h2>Music Play</h2>
+                <p>Memuat lagu Anda...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1 class="app-title">
+                    <i class="fas fa-music"></i> Music Play
+                </h1>
+                <div class="header-actions">
+                    <button class="btn-icon" id="uploadBtn" title="Upload Lagu">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </button>
+                    <button class="btn-icon" id="deleteBtn" title="Hapus Lagu">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                    <button class="btn-icon" id="modeToggle" title="Toggle Mode">
+                        <i class="fas fa-wifi" id="modeIcon"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content" id="mainContent">
+            <!-- Home Page -->
+            <section class="page active" id="homePage">
+                <div class="page-header">
+                    <h2>Beranda</h2>
+                </div>
+                <div class="songs-grid" id="songsGrid">
+                    <div class="empty-state">
+                        <i class="fas fa-music"></i>
+                        <p>Belum ada lagu. Upload lagu untuk memulai!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Search Page -->
+            <section class="page" id="searchPage">
+                <div class="page-header">
+                    <h2>Cari Lagu</h2>
+                </div>
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="Cari lagu, artis, atau album...">
+                    </div>
+                </div>
+                <div class="search-results" id="searchResults">
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <p>Mulai mengetik untuk mencari lagu...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Favorites Page -->
+            <section class="page" id="favoritesPage">
+                <div class="page-header">
+                    <h2>Favorit</h2>
+                </div>
+                <div class="favorites-list" id="favoritesList">
+                    <div class="empty-state">
+                        <i class="fas fa-heart"></i>
+                        <p>Belum ada lagu favorit. Tambahkan lagu ke favorit!</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Library Page -->
+            <section class="page" id="libraryPage">
+                <div class="page-header">
+                    <h2>Pustaka</h2>
+                </div>
+                <div class="library-content" id="libraryContent">
+                    <div class="library-stats">
+                        <div class="stat-card">
+                            <i class="fas fa-music"></i>
+                            <div>
+                                <h3 id="totalSongs">0</h3>
+                                <p>Total Lagu</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <i class="fas fa-heart"></i>
+                            <div>
+                                <h3 id="totalFavorites">0</h3>
+                                <p>Favorit</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="songs-list" id="librarySongsList">
+                        <div class="empty-state">
+                            <i class="fas fa-folder-open"></i>
+                            <p>Pustaka kosong. Upload lagu untuk mengisi!</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Now Playing Bar (Fixed at bottom, above navbar) -->
+        <div class="now-playing-bar" id="nowPlayingBar" style="display: none;">
+            <div class="now-playing-info">
+                <img class="now-playing-cover" id="nowPlayingCover" src="" alt="Cover">
+                <div class="now-playing-details">
+                    <div class="now-playing-title" id="nowPlayingTitle">Tidak ada lagu</div>
+                    <div class="now-playing-artist" id="nowPlayingArtist">-</div>
+                </div>
+            </div>
+            <div class="now-playing-controls">
+                <button class="control-btn" id="prevBtn" title="Sebelumnya">
+                    <i class="fas fa-step-backward"></i>
+                </button>
+                <button class="control-btn play-pause-btn" id="playPauseBtn" title="Play/Pause">
+                    <i class="fas fa-play" id="playPauseIcon"></i>
+                </button>
+                <button class="control-btn" id="nextBtn" title="Selanjutnya">
+                    <i class="fas fa-step-forward"></i>
+                </button>
+            </div>
+            <div class="now-playing-progress">
+                <span class="time-display" id="currentTime">0:00</span>
+                <div class="progress-container">
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="progressBarFill"></div>
+                    </div>
+                </div>
+                <span class="time-display" id="totalTime">0:00</span>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-page="homePage">
+                <i class="fas fa-home"></i>
+                <span>Beranda</span>
+            </button>
+            <button class="nav-item" data-page="searchPage">
+                <i class="fas fa-search"></i>
+                <span>Cari</span>
+            </button>
+            <button class="nav-item" data-page="favoritesPage">
+                <i class="fas fa-heart"></i>
+                <span>Favorit</span>
+            </button>
+            <button class="nav-item" data-page="libraryPage">
+                <i class="fas fa-folder"></i>
+                <span>Pustaka</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Upload Modal -->
+    <div class="modal" id="uploadModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Upload Lagu</h2>
+                <button class="modal-close" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="file" id="fileInput" accept="audio/*" multiple style="display: none;">
+                <div class="upload-area" id="uploadArea">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Klik atau seret file audio ke sini</p>
+                    <p class="upload-hint">Format yang didukung: MP3, WAV, OGG, M4A</p>
+                    <button class="btn-primary" id="selectFilesBtn">Pilih File</button>
+                </div>
+                <div class="upload-progress" id="uploadProgress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p id="progressText">Mengunggah...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Hapus Lagu</h2>
+                <button class="modal-close" id="closeDeleteModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="delete-options">
+                    <div class="delete-option-card" id="deleteAllOption">
+                        <i class="fas fa-trash-alt"></i>
+                        <div>
+                            <h3>Hapus Semua Lagu</h3>
+                            <p>Menghapus semua lagu dari pustaka</p>
+                        </div>
+                    </div>
+                    <div class="delete-option-card" id="deleteSelectedOption">
+                        <i class="fas fa-list-check"></i>
+                        <div>
+                            <h3>Hapus Lagu yang Dipilih</h3>
+                            <p>Pilih lagu yang ingin dihapus satu-persatu</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="delete-selected-content" id="deleteSelectedContent" style="display: none;">
+                    <div class="songs-checkbox-list" id="songsCheckboxList">
+                        <!-- Daftar lagu dengan checkbox akan diisi oleh JavaScript -->
+                    </div>
+                    <div class="delete-actions">
+                        <button class="btn-secondary" id="cancelDeleteBtn">Batal</button>
+                        <button class="btn-danger" id="confirmDeleteSelectedBtn" disabled>
+                            <i class="fas fa-trash-alt"></i> Hapus yang Dipilih
+                        </button>
+                    </div>
+                </div>
+                <div class="delete-all-content" id="deleteAllContent" style="display: none;">
+                    <div class="delete-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Apakah Anda yakin ingin menghapus semua lagu? Tindakan ini tidak dapat dibatalkan.</p>
+                    </div>
+                    <div class="delete-actions">
+                        <button class="btn-secondary" id="cancelDeleteAllBtn">Batal</button>
+                        <button class="btn-danger" id="confirmDeleteAllBtn">
+                            <i class="fas fa-trash-alt"></i> Hapus Semua
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Element (Hidden) -->
+    <audio id="audioPlayer" preload="metadata"></audio>
+
+    <!-- Notification Toast -->
+    <div class="toast-notification" id="toastNotification">
+        <div class="toast-content">
+            <i class="toast-icon" id="toastIcon"></i>
+            <span class="toast-message" id="toastMessage"></span>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
