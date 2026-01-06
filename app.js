@@ -1,6 +1,8 @@
 // Music Player Application
 class MusicPlayer {
     constructor() {
+        // Record start time so loading screen can be shown at least a minimum time
+        this._startTime = Date.now();
         this.state = {
             songs: [],
             currentSong: null,
@@ -12,6 +14,7 @@ class MusicPlayer {
 
         this.audio = document.getElementById('audioPlayer');
         this.progressSlider = document.getElementById('progressSlider');
+        this.progressBarFill = document.getElementById('progressBarFill');
         this.currentTimeDisplay = document.getElementById('currentTime');
         this.totalTimeDisplay = document.getElementById('totalTime');
         this.playPauseBtn = document.getElementById('playPauseBtn');
@@ -26,14 +29,106 @@ class MusicPlayer {
     }
 
     async init() {
-        await this.initIndexedDB();
-        await this.loadSongsFromStorage();
-        this.loadFavoritesFromStorage();
-        this.setupEventListeners();
-        this.setupNavigation();
-        this.setupSearch();
-        this.updateUI();
-        this.checkOnlineStatus();
+        const loadingScreen = document.getElementById('loadingScreen');
+        try {
+            await this.initIndexedDB();
+            await this.loadSongsFromStorage();
+            this.loadFavoritesFromStorage();
+            this.setupEventListeners();
+            this.setupNavigation();
+            this.setupSearch();
+            this.updateUI();
+            this.checkOnlineStatus();
+            // Setup progress UI (knob and markers)
+            this.setupProgressUI();
+        } catch (err) {
+            console.error('Init error:', err);
+        } finally {
+            // Ensure loading screen shows for at least 2 seconds total
+            const minMs = 2000;
+            const elapsed = Date.now() - (this._startTime || Date.now());
+            const remaining = Math.max(0, minMs - elapsed);
+            setTimeout(() => {
+                if (loadingScreen) {
+                    loadingScreen.classList.add('hidden');
+                    // remove from flow after fade
+                    setTimeout(() => {
+                        try { loadingScreen.style.display = 'none'; } catch (e) {}
+                    }, 350);
+                }
+            }, remaining);
+        }
+    }
+
+    setupProgressUI() {
+        const progressContainer = document.querySelector('.progress-container');
+        const progressBarBg = document.querySelector('.progress-bar-bg');
+        if (!progressContainer || !progressBarBg) return;
+        // (no markers) Keep progress bar clean
+
+        // Create knob if not present
+        if (!progressContainer.querySelector('.progress-knob')) {
+            const knob = document.createElement('div');
+            knob.className = 'progress-knob';
+            knob.style.position = 'absolute';
+            knob.style.top = '50%';
+            knob.style.left = '0%';
+            knob.style.transform = 'translate(-50%, -50%)';
+            knob.style.cursor = 'pointer';
+            progressContainer.appendChild(knob);
+        }
+
+        this.progressBarBg = progressBarBg;
+        this.progressContainer = progressContainer;
+        this.progressKnob = progressContainer.querySelector('.progress-knob');
+
+        // Dragging support
+        let dragging = false;
+
+        const calculateAndSeek = (clientX) => {
+            const rect = this.progressBarBg.getBoundingClientRect();
+            const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+            const percentage = (x / rect.width) * 100;
+            this.seekTo(percentage);
+        };
+
+        this.progressKnob.addEventListener('mousedown', (e) => {
+            dragging = true;
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!dragging) return;
+            calculateAndSeek(e.clientX);
+        });
+
+        document.addEventListener('mouseup', () => {
+            dragging = false;
+        });
+
+        // Touch support
+        this.progressKnob.addEventListener('touchstart', (e) => {
+            dragging = true;
+            e.preventDefault();
+        }, { passive: false });
+
+        document.addEventListener('touchmove', (e) => {
+            if (!dragging) return;
+            const touch = e.touches[0];
+            calculateAndSeek(touch.clientX);
+        }, { passive: false });
+
+        document.addEventListener('touchend', () => {
+            dragging = false;
+        });
+
+        // Click on progress container also seeks
+        this.progressContainer.addEventListener('click', (e) => {
+            const rect = this.progressBarBg.getBoundingClientRect();
+            const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+            const percentage = (x / rect.width) * 100;
+            this.seekTo(percentage);
+        });
     }
 
     initIndexedDB() {
@@ -150,42 +245,61 @@ class MusicPlayer {
         });
 
         // Previous button
-        document.getElementById('prevBtn').addEventListener('click', () => {
-            this.prevSong();
-        });
+        const prevBtn = document.getElementById('prevBtn');
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => { this.prevSong(); });
+        }
 
         // Next button
-        document.getElementById('nextBtn').addEventListener('click', () => {
-            this.nextSong();
-        });
+        const nextBtn = document.getElementById('nextBtn');
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => { this.nextSong(); });
+        }
 
-        // Progress slider
-        this.progressSlider.addEventListener('input', (e) => {
-            const target = e.target;
-            const value = parseFloat(target.value);
-            this.seekTo(value);
-        });
+        // Progress slider / progress bar click (some HTML uses a div progress bar)
+        if (this.progressSlider) {
+            this.progressSlider.addEventListener('input', (e) => {
+                const target = e.target;
+                const value = parseFloat(target.value);
+                this.seekTo(value);
+            });
+        } else if (this.progressBarFill) {
+            const progressContainer = document.querySelector('.progress-container');
+            if (progressContainer) {
+                progressContainer.addEventListener('click', (e) => {
+                    const rect = progressContainer.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const percentage = (x / rect.width) * 100;
+                    this.seekTo(percentage);
+                });
+            }
+        }
 
         // Upload button
-        document.getElementById('uploadBtn').addEventListener('click', () => {
-            this.openUploadModal();
-        });
+        const uploadBtn = document.getElementById('uploadBtn');
+        if (uploadBtn) {
+            uploadBtn.addEventListener('click', () => { this.openUploadModal(); });
+        }
 
         // Delete button
-        document.getElementById('deleteBtn').addEventListener('click', () => {
-            this.openDeleteModal();
-        });
+        const deleteBtn = document.getElementById('deleteBtn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => { this.openDeleteModal(); });
+        }
 
         // Mode toggle
-        document.getElementById('modeToggle').addEventListener('click', () => {
-            this.toggleMode();
-        });
+        const modeToggle = document.getElementById('modeToggle');
+        if (modeToggle) {
+            modeToggle.addEventListener('click', () => { this.toggleMode(); });
+        }
 
         // Upload modal
         this.setupUploadModal();
 
         // Delete modal
         this.setupDeleteModal();
+        // Edit modal
+        this.setupEditModal();
 
         // Online/Offline detection
         window.addEventListener('online', () => {
@@ -207,13 +321,13 @@ class MusicPlayer {
         const selectFilesBtn = document.getElementById('selectFilesBtn');
 
         // Open file input
-        selectFilesBtn.addEventListener('click', () => {
-            fileInput.click();
-        });
+        if (selectFilesBtn) {
+            selectFilesBtn.addEventListener('click', () => { fileInput && fileInput.click(); });
+        }
 
-        uploadArea.addEventListener('click', () => {
-            fileInput.click();
-        });
+        if (uploadArea) {
+            uploadArea.addEventListener('click', () => { fileInput && fileInput.click(); });
+        }
 
         // Drag and drop
         uploadArea.addEventListener('dragover', (e) => {
@@ -234,7 +348,7 @@ class MusicPlayer {
 
             const files = e.dataTransfer && e.dataTransfer.files;
             if (files) {
-                this.handleFileUpload(Array.from(files));
+                this.prepareUploadFiles(Array.from(files));
             }
         });
 
@@ -242,26 +356,74 @@ class MusicPlayer {
         fileInput.addEventListener('change', (e) => {
             const target = e.target;
             if (target.files) {
-                this.handleFileUpload(Array.from(target.files));
+                this.prepareUploadFiles(Array.from(target.files));
             }
         });
 
         // Close modal
-        closeModal.addEventListener('click', () => {
-            uploadModal.classList.remove('show');
-        });
+        if (closeModal) {
+            closeModal.addEventListener('click', () => { uploadModal && uploadModal.classList.remove('show'); });
+        }
 
-        uploadModal.addEventListener('click', (e) => {
-            if (e.target === uploadModal) {
-                uploadModal.classList.remove('show');
-            }
-        });
+        if (uploadModal) {
+            uploadModal.addEventListener('click', (e) => {
+                if (e.target === uploadModal) {
+                    uploadModal.classList.remove('show');
+                }
+            });
+        }
+
+        // Prepare / start upload actions
+        const fileMetadataList = document.getElementById('fileMetadataList');
+        const uploadActions = document.getElementById('uploadActions');
+        const startUploadBtn = document.getElementById('startUploadBtn');
+        const cancelSelectionBtn = document.getElementById('cancelSelectionBtn');
+
+        if (cancelSelectionBtn) {
+            cancelSelectionBtn.addEventListener('click', () => {
+            // Reset file input and hide metadata UI
+            fileInput.value = '';
+            if (fileMetadataList) fileMetadataList.innerHTML = '';
+            if (fileMetadataList) fileMetadataList.style.display = 'none';
+            if (uploadActions) uploadActions.style.display = 'none';
+            });
+        }
+
+        if (startUploadBtn) {
+            startUploadBtn.addEventListener('click', () => {
+            // Gather metadata and start upload
+            if (!fileMetadataList) return;
+            const items = [];
+            const rows = fileMetadataList.querySelectorAll('.file-metadata-item');
+            rows.forEach((row, idx) => {
+                const fileIndex = parseInt(row.getAttribute('data-index'), 10);
+                const file = this._pendingFiles && this._pendingFiles[fileIndex];
+                if (!file) return;
+                const titleInput = row.querySelector('.metadata-title');
+                const artistInput = row.querySelector('.metadata-artist');
+                items.push({ file: file, title: titleInput ? titleInput.value.trim() : null, artist: artistInput ? artistInput.value.trim() : null });
+            });
+            // start processing
+            this.handleFileUpload(items);
+            // clear pending UI
+            fileInput.value = '';
+            fileMetadataList.innerHTML = '';
+            fileMetadataList.style.display = 'none';
+            uploadActions.style.display = 'none';
+            this._pendingFiles = null;
+            });
+        }
     }
 
     async handleFileUpload(files) {
-        const audioFiles = files.filter(file => file.type.startsWith('audio/'));
-        
-        if (audioFiles.length === 0) {
+        // Support items as {file, title, artist} or plain File
+        const items = files.map(item => {
+            if (item && item.file) return item;
+            return { file: item, title: null, artist: null };
+        });
+
+        const audioItems = items.filter(i => i.file && i.file.type && i.file.type.startsWith('audio/'));
+        if (audioItems.length === 0) {
             alert('Tidak ada file audio yang valid!');
             return;
         }
@@ -273,14 +435,16 @@ class MusicPlayer {
         uploadProgress.style.display = 'block';
         progressText.textContent = 'Memproses file...';
 
-        for (let i = 0; i < audioFiles.length; i++) {
-            const file = audioFiles[i];
-            const progress = ((i + 1) / audioFiles.length) * 100;
+        for (let i = 0; i < audioItems.length; i++) {
+            const item = audioItems[i];
+            const file = item.file;
+            const meta = { title: item.title, artist: item.artist };
+            const progress = ((i + 1) / audioItems.length) * 100;
             progressFill.style.width = `${progress}%`;
-            progressText.textContent = `Mengunggah ${i + 1} dari ${audioFiles.length}...`;
+            progressText.textContent = `Mengunggah ${i + 1} dari ${audioItems.length}...`;
 
             try {
-                const song = await this.processAudioFile(file);
+                const song = await this.processAudioFile(file, meta);
                 this.addSong(song);
             } catch (error) {
                 console.error('Error processing file:', error);
@@ -292,11 +456,77 @@ class MusicPlayer {
         setTimeout(() => {
             uploadProgress.style.display = 'none';
             document.getElementById('uploadModal').classList.remove('show');
+            // clear pending metadata UI
+            const metaList = document.getElementById('fileMetadataList');
+            const uploadActions = document.getElementById('uploadActions');
+            if (metaList) metaList.innerHTML = '';
+            if (metaList) metaList.style.display = 'none';
+            if (uploadActions) uploadActions.style.display = 'none';
             this.updateUI();
         }, 1000);
     }
 
-    async processAudioFile(file) {
+    prepareUploadFiles(files) {
+        // show metadata inputs in modal for user to edit before uploading
+        const audioFiles = files.filter(f => f.type && f.type.startsWith && f.type.startsWith('audio/'));
+        if (audioFiles.length === 0) {
+            alert('Tidak ada file audio yang valid!');
+            return;
+        }
+
+        this._pendingFiles = audioFiles;
+        const fileMetadataList = document.getElementById('fileMetadataList');
+        const uploadActions = document.getElementById('uploadActions');
+        if (!fileMetadataList || !uploadActions) return;
+
+        fileMetadataList.innerHTML = '';
+        audioFiles.forEach((file, idx) => {
+            const fileName = file.name;
+            const defaultTitle = fileName.replace(/\.[^/.]+$/, '');
+            const wrapper = document.createElement('div');
+            wrapper.className = 'file-metadata-item';
+            wrapper.setAttribute('data-index', idx.toString());
+            wrapper.style.display = 'flex';
+            wrapper.style.flexDirection = 'column';
+            wrapper.style.gap = '0.5rem';
+            wrapper.style.marginBottom = '0.75rem';
+
+            const nameEl = document.createElement('div');
+            nameEl.textContent = fileName;
+            nameEl.style.fontWeight = '600';
+            nameEl.style.fontSize = '0.95rem';
+
+            const titleInput = document.createElement('input');
+            titleInput.className = 'metadata-title';
+            titleInput.placeholder = 'Judul lagu';
+            titleInput.value = defaultTitle;
+            titleInput.style.padding = '0.5rem';
+            titleInput.style.borderRadius = '6px';
+            titleInput.style.border = '1px solid var(--border-color)';
+            titleInput.style.background = 'var(--surface-color)';
+            titleInput.style.color = 'var(--text-primary)';
+
+            const artistInput = document.createElement('input');
+            artistInput.className = 'metadata-artist';
+            artistInput.placeholder = 'Nama artis';
+            artistInput.value = '';
+            artistInput.style.padding = '0.5rem';
+            artistInput.style.borderRadius = '6px';
+            artistInput.style.border = '1px solid var(--border-color)';
+            artistInput.style.background = 'var(--surface-color)';
+            artistInput.style.color = 'var(--text-primary)';
+
+            wrapper.appendChild(nameEl);
+            wrapper.appendChild(titleInput);
+            wrapper.appendChild(artistInput);
+            fileMetadataList.appendChild(wrapper);
+        });
+
+        fileMetadataList.style.display = 'block';
+        uploadActions.style.display = 'flex';
+    }
+
+    async processAudioFile(file, meta = {}) {
         return new Promise(async (resolve, reject) => {
             try {
                 const url = URL.createObjectURL(file);
@@ -316,10 +546,16 @@ class MusicPlayer {
 
                     // Extract metadata and cover art
                     this.extractMetadata(file, url).then(({ title, artist, album, cover }) => {
+                        const defaultTitle = title || file.name.replace(/\.[^/.]+$/, '');
+                        const defaultArtist = artist || 'Unknown Artist';
+
+                        const finalTitle = (meta && meta.title) ? meta.title : defaultTitle;
+                        const finalArtist = (meta && meta.artist) ? meta.artist : defaultArtist;
+
                         const song = {
                             id: songId,
-                            title: title || file.name.replace(/\.[^/.]+$/, ''),
-                            artist: artist || 'Unknown Artist',
+                            title: finalTitle,
+                            artist: finalArtist,
                             album: album,
                             cover: cover,
                             file: file,
@@ -506,14 +742,23 @@ class MusicPlayer {
 
     seekTo(percentage) {
         if (this.audio.duration) {
-            this.audio.currentTime = (percentage / 100) * this.audio.duration;
+            const time = (percentage / 100) * this.audio.duration;
+            this.audio.currentTime = time;
+            this.updateProgress();
         }
     }
 
     updateProgress() {
         if (this.audio.duration) {
             const percentage = (this.audio.currentTime / this.audio.duration) * 100;
-            this.progressSlider.value = percentage.toString();
+            if (this.progressSlider) {
+                this.progressSlider.value = percentage.toString();
+            } else if (this.progressBarFill) {
+                this.progressBarFill.style.width = `${percentage}%`;
+            }
+            if (this.progressKnob) {
+                this.progressKnob.style.left = `${percentage}%`;
+            }
             this.currentTimeDisplay.textContent = this.formatTime(this.audio.currentTime);
         }
     }
@@ -624,8 +869,10 @@ class MusicPlayer {
 
     updateSongsGrid() {
         const grid = document.getElementById('songsGrid');
-        
+        if (!grid) return;
+
         if (this.state.songs.length === 0) {
+            grid.classList.add('empty');
             grid.innerHTML = `
                 <div class="empty-state">
                     <i class="fas fa-music"></i>
@@ -635,6 +882,7 @@ class MusicPlayer {
             return;
         }
 
+        grid.classList.remove('empty');
         grid.innerHTML = this.renderSongsGrid(this.state.songs);
         this.attachSongListeners(grid);
     }
@@ -656,6 +904,9 @@ class MusicPlayer {
                                 data-song-id="${song.id}" 
                                 title="${song.favorite ? 'Hapus dari favorit' : 'Tambah ke favorit'}">
                             <i class="fas fa-heart"></i>
+                        </button>
+                        <button class="btn-small edit-btn" data-song-id="${song.id}" title="Edit judul/artis">
+                            <i class="fas fa-pen"></i>
                         </button>
                     </div>
                 </div>
@@ -679,6 +930,9 @@ class MusicPlayer {
                             <button class="btn-small favorite ${song.favorite ? 'active' : ''}" 
                                     data-song-id="${song.id}">
                                 <i class="fas fa-heart"></i>
+                            </button>
+                            <button class="btn-small edit-btn" data-song-id="${song.id}" title="Edit judul/artis">
+                                <i class="fas fa-pen"></i>
                             </button>
                             <button class="btn-small" data-song-id="${song.id}" data-action="play">
                                 <i class="fas fa-play"></i>
@@ -717,6 +971,17 @@ class MusicPlayer {
                 const songId = btn.getAttribute('data-song-id');
                 if (songId) {
                     this.toggleFavorite(songId);
+                }
+            });
+        });
+
+        // Edit buttons
+        container.querySelectorAll('.edit-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const songId = btn.getAttribute('data-song-id');
+                if (songId) {
+                    this.openEditModal(songId);
                 }
             });
         });
@@ -870,6 +1135,71 @@ class MusicPlayer {
         confirmDeleteSelectedBtn.addEventListener('click', () => {
             this.deleteSelectedSongs();
         });
+    }
+
+    setupEditModal() {
+        const editModal = document.getElementById('editModal');
+        const closeEditModal = document.getElementById('closeEditModal');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const saveEditBtn = document.getElementById('saveEditBtn');
+
+        if (closeEditModal) {
+            closeEditModal.addEventListener('click', () => { editModal && editModal.classList.remove('show'); });
+        }
+
+        if (cancelEditBtn) {
+            cancelEditBtn.addEventListener('click', () => { editModal && editModal.classList.remove('show'); });
+        }
+
+        if (saveEditBtn) {
+            saveEditBtn.addEventListener('click', () => { this.saveEdit(); });
+        }
+
+        if (editModal) {
+            editModal.addEventListener('click', (e) => {
+                if (e.target === editModal) editModal.classList.remove('show');
+            });
+        }
+    }
+
+    openEditModal(songId) {
+        const song = this.state.songs.find(s => s.id === songId);
+        if (!song) return;
+        const editModal = document.getElementById('editModal');
+        const titleInput = document.getElementById('editTitleInput');
+        const artistInput = document.getElementById('editArtistInput');
+        if (!editModal || !titleInput || !artistInput) return;
+
+        titleInput.value = song.title || '';
+        artistInput.value = song.artist || '';
+        this._editingSongId = songId;
+        editModal.classList.add('show');
+    }
+
+    saveEdit() {
+        const titleInput = document.getElementById('editTitleInput');
+        const artistInput = document.getElementById('editArtistInput');
+        const editModal = document.getElementById('editModal');
+        if (!titleInput || !artistInput) return;
+
+        const newTitle = titleInput.value.trim() || 'Unknown Title';
+        const newArtist = artistInput.value.trim() || 'Unknown Artist';
+
+        const songId = this._editingSongId;
+        if (!songId) return;
+
+        const song = this.state.songs.find(s => s.id === songId);
+        if (!song) return;
+
+        song.title = newTitle;
+        song.artist = newArtist;
+
+        this.saveSongsToStorage();
+        this.updateUI();
+
+        if (editModal) editModal.classList.remove('show');
+        this._editingSongId = null;
+        this.showToast('success', 'Perubahan tersimpan', 'fas fa-check');
     }
 
     openDeleteModal() {
@@ -1042,6 +1372,7 @@ class MusicPlayer {
 
     updateModeIcon() {
         const modeIcon = document.getElementById('modeIcon');
+        if (!modeIcon) return;
         if (this.state.isOnline) {
             modeIcon.className = 'fas fa-wifi';
             modeIcon.title = 'Mode Online';
