@@ -33,6 +33,12 @@
     animation: fadeIn 0.5s ease;
 }
 
+.loading-screen.hidden {
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+}
+
 .loading-content {
     text-align: center;
     color: white;
@@ -326,44 +332,53 @@ body {
 
 .song-info {
     position: relative;
+    display: flex;
+    flex-direction: column;
 }
 
 .song-title {
     font-weight: 600;
     font-size: 0.95rem;
-    margin-bottom: 0.25rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    margin-bottom: 0.35rem;
+    white-space: normal;
+    overflow: visible;
+    word-break: break-word;
+    display: block;
 }
 
 .song-artist {
     font-size: 0.85rem;
     color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    margin-top: 0.25rem;
+    white-space: normal;
+    overflow: visible;
+    display: block;
+}
+
+/* Add explicit bottom spacing so actions sit separated from artist name */
+.song-artist {
+    margin-bottom: 0.5rem;
 }
 
 .song-play-btn {
     position: absolute;
-    bottom: 0.5rem;
-    right: 0.5rem;
+    bottom: 0.6rem;
+    right: 0.6rem;
     background: var(--primary-color);
     border: none;
     border-radius: 50%;
-    width: 48px;
-    height: 48px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 1.2rem;
+    font-size: 1rem;
     cursor: pointer;
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
     transition: var(--transition);
-    box-shadow: 0 4px 12px rgba(29, 185, 84, 0.4);
+    box-shadow: 0 3px 8px rgba(29, 185, 84, 0.35);
 }
 
 .song-play-btn:hover {
@@ -374,7 +389,8 @@ body {
 .song-actions {
     display: flex;
     gap: 0.5rem;
-    margin-top: 0.5rem;
+    margin-top: 0.5rem; /* space between artist and actions */
+    align-items: center;
 }
 
 .btn-small {
@@ -599,17 +615,6 @@ body {
     position: relative;
 }
 
-.progress-bar-fill::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(90deg, transparent 0%, rgba(29, 185, 84, 0.8) 50%, transparent 100%);
-    animation: worm 2s infinite;
-}
-
 @keyframes worm {
     0% {
         transform: translateX(-100%);
@@ -617,6 +622,60 @@ body {
     100% {
         transform: translateX(100%);
     }
+}
+
+/* Progress knob and markers */
+.progress-knob {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+    z-index: 5;
+    transition: left 0.05s linear;
+}
+
+/* Center empty state on home page */
+/* When songs-grid is empty, center the empty-state block */
+.songs-grid.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+}
+
+.songs-grid.empty .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Edit modal: make cancel same size as save and smaller rounded corners */
+#editModal .btn-primary,
+#editModal .btn-secondary {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.95rem;
+}
+
+/* Edit button (pencil) — neutral by default, highlight green on interaction */
+.edit-btn {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    background: rgba(29, 185, 84, 0.06);
+    transition: var(--transition);
+}
+
+.edit-btn:hover,
+.edit-btn:focus {
+    color: var(--primary-dark);
+    border-color: var(--primary-dark);
+    background: rgba(29, 163, 74, 0.08);
+}
+
+.edit-btn i {
+    pointer-events: none;
 }
 
 /* Bottom Navigation */
@@ -882,22 +941,27 @@ body {
 .song-list-title {
     font-weight: 600;
     margin-bottom: 0.25rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
+    word-break: break-word;
 }
 
 .song-list-artist {
     font-size: 0.85rem;
     color: var(--text-secondary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow: visible;
+    display: block;
+}
+
+.song-list-artist {
+    margin-bottom: 0.35rem;
 }
 
 .song-list-actions {
     display: flex;
     gap: 0.5rem;
+    align-items: center;
 }
 
 /* Search Results */
@@ -1091,6 +1155,31 @@ body {
     background: var(--hover-color);
     border-color: var(--text-secondary);
     color: var(--text-primary);
+}
+
+/* Upload modal: make Cancel and Start buttons match and align */
+#uploadModal #cancelSelectionBtn,
+#uploadModal #startUploadBtn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    height: 40px;
+    min-width: 100px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    box-sizing: border-box;
+    margin: 0;
+    vertical-align: middle;
+}
+
+#uploadModal .upload-actions {
+    align-items: center;
+}
+
+#uploadModal #cancelSelectionBtn {
+    transform: translateY(-1px);
 }
 
 .btn-danger {
@@ -1321,4 +1410,79 @@ body {
         grid-template-columns: repeat(2, 1fr);
     }
 }
+
+/* Desktop: show songs-list in 2 columns to reduce long single-column scrolling */
+@media (min-width: 1024px) {
+    .songs-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        align-items: start;
+    }
+
+    .song-list-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem;
+    }
+
+    .song-list-cover {
+        width: 56px;
+        height: 56px;
+        border-radius: 6px;
+        flex-shrink: 0;
+    }
+
+    .song-list-actions {
+        align-self: center;
+    }
+
+    /* Desktop: tighten up song card grid so multiple slides are visible side-by-side */
+    .songs-grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 1rem;
+    }
+
+    .song-card {
+        padding: 0.6rem;
+    }
+
+    .song-cover {
+        margin-bottom: 0.5rem;
+        aspect-ratio: 1;
+    }
+}
+
+/* Ensure edit modal buttons match (Cancel = Save) */
+#editModal #cancelEditBtn,
+#editModal #saveEditBtn {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    height: 40px;
+    min-width: 100px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Align the button row vertically so buttons sit flush */
+#editModal .modal-body > div > div {
+    align-items: center;
+}
+
+/* Normalize button internals and nudge Cancel slightly if needed */
+#editModal #cancelEditBtn,
+#editModal #saveEditBtn {
+    line-height: 1;
+    box-sizing: border-box;
+    margin: 0;
+    vertical-align: middle;
+}
+
+#editModal #cancelEditBtn {
+    transform: translateY(-1px);
+}
+
 
