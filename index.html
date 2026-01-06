@@ -22,7 +22,7 @@
             </div>
             <div class="loading-text">
                 <h2>Music Play</h2>
-                <p>Memuat lagu Anda...</p>
+                <p>Created By Farid</p>
             </div>
         </div>
     </div>
@@ -193,9 +193,14 @@
                 <input type="file" id="fileInput" accept="audio/*" multiple style="display: none;">
                 <div class="upload-area" id="uploadArea">
                     <i class="fas fa-cloud-upload-alt"></i>
-                    <p>Klik atau seret file audio ke sini</p>
+                    <p>Klik atau seret file audio kesini</p>
                     <p class="upload-hint">Format yang didukung: MP3, WAV, OGG, M4A</p>
                     <button class="btn-primary" id="selectFilesBtn">Pilih File</button>
+                </div>
+                <div id="fileMetadataList" style="display: none; margin-top: 1rem;"></div>
+                <div class="upload-actions" id="uploadActions" style="display: none; margin-top:1rem; display:flex; gap:0.5rem; justify-content:flex-end;">
+                    <button class="btn-secondary" id="cancelSelectionBtn">Batal</button>
+                    <button class="btn-primary" id="startUploadBtn">Mulai Unggah</button>
                 </div>
                 <div class="upload-progress" id="uploadProgress" style="display: none;">
                     <div class="progress-bar">
@@ -254,6 +259,30 @@
                         <button class="btn-danger" id="confirmDeleteAllBtn">
                             <i class="fas fa-trash-alt"></i> Hapus Semua
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Song Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Lagu</h2>
+                <button class="modal-close" id="closeEditModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                    <label>Judul lagu</label>
+                    <input type="text" id="editTitleInput" placeholder="Judul lagu" style="padding:0.5rem;border-radius:6px;border:1px solid var(--border-color);background:var(--surface-color);color:var(--text-primary);">
+                    <label>Nama artis</label>
+                    <input type="text" id="editArtistInput" placeholder="Nama artis" style="padding:0.5rem;border-radius:6px;border:1px solid var(--border-color);background:var(--surface-color);color:var(--text-primary);">
+                    <div style="display:flex;gap:0.5rem;justify-content:flex-end;margin-top:0.5rem;">
+                        <button class="btn-secondary" id="cancelEditBtn">Batal</button>
+                        <button class="btn-primary" id="saveEditBtn">Simpan</button>
                     </div>
                 </div>
             </div>
