@@ -21,7 +21,7 @@ interface AppState {
 }
 
 // State Management
-class MusicPlayer {
+class musicPlayer {
     private state: AppState;
     private audio: HTMLAudioElement;
     private progressBarFill!: HTMLElement;
